@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { generateToken } from "../lib/utils.js";
+import "dotenv/config";
+import { sendWelcomeEmail } from "../emails/emailHandlers.js";
+import { ENV } from "../lib/env.js";
 
 export const login = async (req, res) => {
   res.send("Login page");
@@ -43,9 +46,9 @@ export const signup = async (req, res) => {
     });
 
     if (newUser) {
-      await newUser.save();
+      const savedUser = await newUser.save();
       generateToken(newUser._id, res);
-      return res.status(201).json({
+      res.status(201).json({
         _id: newUser._id,
         fullName: newUser.fullName,
         email: newUser.email,
@@ -53,7 +56,15 @@ export const signup = async (req, res) => {
         message: "User registered successfully",
       });
 
-      // TODO: send welcome email
+      try {
+        await sendWelcomeEmail(
+          savedUser.email,
+          savedUser.fullName,
+          ENV.CLIENT_URL
+        );
+      } catch (error) {
+        console.error("Failed to send welcome email:", error);
+      }
     } else {
       return res.status(400).json({ message: "Invalid user data" });
     }
@@ -61,6 +72,4 @@ export const signup = async (req, res) => {
     console.log("Error in signup controller: ", error);
     res.status(500).json({ message: "Internal server error" });
   }
-
-  res.send("Signup page");
 };

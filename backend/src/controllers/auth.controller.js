@@ -4,6 +4,7 @@ import { generateToken } from "../lib/utils.js";
 import "dotenv/config";
 import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 import { ENV } from "../lib/env.js";
+import cloudinary from "../lib/cloudinary.js";
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -104,6 +105,33 @@ export const signup = async (req, res) => {
     }
   } catch (error) {
     console.log("Error in signup controller: ", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  const { profilePic } = req.body;
+  if (!profilePic) {
+    return res.status(400).json({ message: "Profile picture is required" });
+  }
+
+  try {
+    const userId = req.user._id; // Can access since we passed it as an object in protectRoute middleware
+
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    );
+
+    res.status(200).json({
+      updatedUser,
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.log("Error in update profile: ", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

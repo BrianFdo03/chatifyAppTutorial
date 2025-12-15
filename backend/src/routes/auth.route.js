@@ -6,8 +6,14 @@ import {
   updateProfile,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
+import { arcjetProtection } from "../middleware/arcjet.middleware.js";
 
 const router = express.Router();
+
+// This method will be run 1st when routers in this page triggered
+// then the normal function will run
+// Ex: this is similar to router.post("/login", arcjetProtection, login);
+router.use(arcjetProtection);
 
 router.post("/login", login);
 
